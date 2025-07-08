@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>九萬畝 復刻第四版</title>
+    <!-- External Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Local Stylesheets -->
+    <link rel="stylesheet" href="main.css">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div id="game-viewport">
+        <canvas id="game-map-canvas" class="absolute top-0 left-0"></canvas>
+        
+        <div class="absolute bottom-[2%] right-[3%] flex flex-col space-y-4">
+            <button id="info-button" class="btn-custom-base btn-custom-normal btn-main-size text-xl sm:px-10">資訊</button>
+            <button id="troops-button" class="btn-custom-base btn-custom-normal btn-main-size text-xl sm:px-10">部隊</button>
+            <button id="build-button" class="btn-custom-base btn-custom-normal btn-main-size text-xl sm:px-10">建造</button>
+            <button id="minimap-button" class="hidden btn-custom-base btn-custom-normal btn-main-size text-xl sm:px-10">小地圖</button>
+        </div>
+        
+        <div class="absolute bottom-[2%] left-[3%] flex flex-col space-y-4">
+            <button id="back-button" class="btn-custom-base btn-custom-normal btn-main-size text-xl sm:px-10">返回</button>
+            <button id="go-back-to-city-button" class="hidden btn-custom-base btn-custom-normal btn-main-size text-xl sm:px-10">回到城市</button>
+        </div>
+
+        <button id="enter-location-button" class="hidden fixed right-[3%] top-1/2 -translate-y-1/2 btn-custom-base btn-custom-normal btn-main-size text-xl sm:px-10">
+            進入
+        </button>
+    </div>
+
+    <div id="build-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div id="build-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg h-full max-h-[80vh] flex flex-col relative sm:w-5/6">
+            <button id="modal-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">選擇建築</h2>
+            <div id="building-list" class="flex-grow overflow-y-auto pr-2 scrollbar-hidden"></div>
+        </div>
+    </div>
+    
+    <div id="world-minimap-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div id="world-minimap-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-[80vw] h-[80vh] max-w-[700px] max-h-[700px] aspect-square flex flex-col relative">
+            <button id="world-minimap-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <div class="flex-grow flex items-center justify-center">
+                <canvas id="world-minimap-canvas" class="border border-gray-400 bg-gray-50 cursor-pointer w-full h-full"></canvas>
+            </div>
+            <div class="flex items-center justify-between space-x-2 mt-4 py-2 bg-gray-100 rounded-md border border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <label for="minimap-input-col" class="text-gray-700 font-semibold">X:</label>
+                    <input type="number" id="minimap-input-col" class="w-20 px-2 py-1 border border-gray-300 rounded-md text-center text-gray-800" placeholder="X" min="0" max="59">
+                    <label for="minimap-input-row" class="text-gray-700 font-semibold">Y:</label>
+                    <input type="number" id="minimap-input-row" class="w-20 px-2 py-1 border border-gray-300 rounded-md text-center text-gray-800" placeholder="Y" min="0" max="59">
+                </div>
+                <button id="confirm-minimap-view-button" class="btn-custom-base btn-small-size bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center justify-center">
+                    <i class="fas fa-crosshairs mr-2"></i> 移動至此
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="unit-training-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div id="unit-training-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg h-full max-h-[80vh] flex flex-col relative sm:w-5/6">
+            <button id="unit-modal-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">單位訓練</h2>
+            
+            <div class="mb-4">
+                <h3 class="text-xl font-semibold mb-3 text-center text-gray-800">訓練單位</h3>
+                <div id="unit-selection-list" class="flex flex-row overflow-x-auto pb-2 space-x-3 scrollbar-hidden">
+                </div>
+            </div>
+
+            <div class="flex-grow flex flex-col overflow-y-auto pt-4 border-t border-gray-200">
+                <h3 class="font-semibold mb-3 text-center text-gray-800">訓練詳情與佇列</h3>
+                <div id="unit-item-container-wrapper" class="bg-gray-100 p-3 rounded-lg shadow-sm mb-4 transition-opacity duration-200 hidden">
+                    <div id="unit-item-container" class="flex items-center justify-between flex-wrap gap-2">
+                        <div class="flex flex-col items-center space-y-1 flex-shrink-0 w-20 h-20 relative">
+                            <img id="unit-image" src="" alt="單位圖像" class="absolute w-[80%] h-[80%] object-cover rounded-md border border-gray-300 top-1/2 left/2 -translate-x-1/2 -translate-y-1/2">
+                            <img id="unit-secondary-image" src="https://placehold.co/12x12/CCCCCC/666666?text=." alt="單位次要圖像" class="absolute w-[0.3em] h-[0.3em] object-cover rounded-full bottom-0">
+                        </div>
+                        <div class="flex-grow ml-4">
+                            <div class="flex items-center justify-between mb-1 flex-wrap">
+                                <div id="unit-name" class="font-semibold text-lg text-gray-800"></div>
+                                <div class="flex items-center text-gray-600 text-sm">
+                                    速度: 
+                                    <button id="speed-down-button" class="ml-2 px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700 active:scale-95 transition-all duration-100 flex items-center justify-center font-bold" aria-label="Decrease speed"><</button>
+                                    <span id="unit-speed" class="font-medium text-blue-700 mx-2 w-6 text-center"></span>
+                                    <button id="speed-up-button" class="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700 active:scale-95 transition-all duration-100 flex items-center justify-center font-bold" aria-label="Increase speed">></button>
+                                </div>
+                            </div>
+                            <div class="text-gray-600 text-sm mb-1">
+                                訓練時間: <span id="unit-training-time" class="font-medium text-blue-700"></span>秒 
+                                移動速度: <span id="unit-movement-speed" class="font-medium text-blue-700"></span>
+                            </div>
+                            <div class="text-gray-600 text-sm">
+                                資源消耗: <span id="unit-resources-display-value" class="font-medium text-blue-700"></span>
+                            </div>
+                        </div>
+                        <button id="train-unit-button" class="btn-custom-base btn-custom-normal btn-small-size flex-shrink-0 mt-2 md:mt-0">訓練</button>
+                    </div>
+                </div>
+                <p id="unit-selection-placeholder" class="text-center text-gray-500 italic mt-4">請從上方選擇一個單位進行訓練。</p>
+
+                <div id="pre-training-area" class="mt-auto">
+                    <h3 class="font-semibold text-xl text-gray-800 mb-3 text-center">訓練中單位</h3>
+                    <div id="pre-training-slots" class="grid grid-cols-6 gap-1 justify-items-center"></div>
+                    <div id="pre-training-sub-slots" class="grid grid-cols-6 gap-1 justify-items-center mt-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="troop-list-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div id="troop-list-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg h-full max-h-[80vh] flex flex-col relative sm:w-5/6">
+            <button id="troop-modal-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">我方軍隊列表</h2>
+            <div id="troop-list-container" class="flex-grow overflow-y-auto pr-2 scrollbar-hidden">
+                <p id="no-troops-message" class="text-center text-gray-500 mt-4">目前沒有任何部隊。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="analysis-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div id="analysis-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl flex flex-col relative sm:w-5/6">
+            <button id="analysis-modal-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">數據分析中心</h2>
+            <div class="flex flex-col md:flex-row justify-around items-center gap-4">
+                <div class="flex flex-col items-center w-full">
+                    <h3 class="text-lg font-semibold text-gray-700">建築分佈</h3>
+                    <div class="chart-container">
+                        <canvas id="building-chart"></canvas>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center w-full">
+                    <h3 class="text-lg font-semibold text-gray-700">軍隊組成</h3>
+                     <div class="chart-container">
+                        <canvas id="army-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div id="info-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg h-full max-h-[80vh] flex flex-col relative sm:w-5/6">
+            <button id="info-modal-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">遊戲資訊</h2>
+            <div class="flex-grow overflow-y-auto pr-2 scrollbar-hidden text-gray-700">
+                <h3 class="text-xl font-semibold mb-2 mt-4">玩家資訊：</h3>
+                <p class="mb-2 text-gray-500 italic">此區塊將用於顯示玩家的過往紀錄、等級、道具等可保留的資料。目前尚未實裝，敬請期待！</p>
+            
+                <button id="info-to-analysis-button" class="btn-custom-base btn-custom-normal btn-small-size mt-2">分析</button> 
+                <button id="info-to-illustrated-guide-button" class="btn-custom-base btn-custom-normal btn-small-size mt-2">圖鑑</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="illustrated-guide-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="illustrated-guide-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg h-full max-h-[80vh] flex flex-col relative sm:w-5/6">
+            <button id="illustrated-guide-modal-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">遊戲圖鑑</h2>
+            
+            <div id="illustrated-guide-background-layer" class="absolute left-6 right-6 bottom-6 top-[4rem] bg-gray-100 border border-gray-300 rounded-md z-0"></div>
+
+            <div id="policy-content" class="illustrated-guide-tab flex-grow overflow-y-auto scrollbar-hidden text-gray-700 relative z-10 p-2">
+                <p class="text-center text-gray-500 italic mt-4">更多政策內容將於日後填充。</p>
+            </div>
+
+            <div id="soldier-content" class="illustrated-guide-tab hidden flex-grow overflow-y-auto scrollbar-hidden text-gray-700 relative z-10 p-2">
+            </div>
+
+            <div id="equipment-content" class="illustrated-guide-tab hidden flex-grow overflow-y-auto scrollbar-hidden text-gray-700 relative z-10 p-2">
+            </div>
+
+            <div id="portrait-content" class="illustrated-guide-tab hidden flex-grow overflow-y-auto scrollbar-hidden text-gray-700 relative z-10 p-2">
+                <h3 class="text-xl font-semibold mb-2">畫像</h3>
+                <p>這裡將顯示不同角色或英雄的畫像、背景故事和特殊能力。</p>
+                <p class="text-center text-gray-500 italic mt-4">畫像內容暫未設定。敬請期待！</p>
+            </div>
+
+
+            <div class="mt-auto flex justify-around w-full space-x-2 p-2 bg-white rounded-lg shadow-inner relative z-10">
+                <button id="policy-button" class="btn-custom-base btn-custom-pressed btn-small-size flex-grow">政策</button>
+                <button id="soldier-button" class="btn-custom-base btn-custom-normal btn-small-size flex-grow">士兵</button>
+                <button id="equipment-button" class="btn-custom-base btn-custom-normal btn-small-size flex-grow">裝備</button>
+                <button id="portrait-button" class="btn-custom-base btn-custom-normal btn-small-size flex-grow">畫像</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="policy-detail-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="policy-detail-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="policy-detail-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <div class="flex flex-col items-center justify-center text-gray-800 text-center">
+                <img id="policy-detail-image" src="" alt="政策圖像" class="w-24 h-24 object-contain mb-4 border border-gray-300 rounded-md detail-image">
+                <h3 id="policy-detail-name" class="text-2xl font-bold mb-2 detail-name"></h3>
+                <div id="policy-detail-description" class="text-md text-gray-600 px-4 detail-description"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="equipment-detail-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="equipment-detail-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="equipment-detail-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <div class="flex flex-col items-center justify-center text-gray-800 text-center">
+                <img id="equipment-detail-image" src="" alt="裝備圖像" class="w-24 h-24 object-contain mb-4 border border-gray-300 rounded-md detail-image">
+                <h3 id="equipment-detail-name" class="text-2xl font-bold mb-2 detail-name"></h3>
+                <div id="equipment-detail-description" class="text-md text-gray-600 px-4 detail-description"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="soldier-detail-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="soldier-detail-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md flex flex-col relative detail-modal-content">
+            <button id="soldier-detail-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+
+            <div class="relative w-full h-32 md:h-40 bg-gray-100 p-4 rounded-md shadow-sm border border-gray-200 flex items-center mb-4">
+                <img id="soldier-detail-image" src="" alt="士兵圖像" class="w-24 h-24 object-contain rounded-md border border-gray-300 flex-shrink-0">
+                <div class="flex-grow flex flex-col items-start ml-4 mr-auto">
+                    <h3 id="soldier-detail-name" class="text-2xl font-bold text-gray-800 leading-tight"></h3>
+                    <p class="text-md text-gray-600">等級: <span id="soldier-detail-level" class="font-semibold text-blue-700"></span></p>
+                </div>
+                <div class="absolute top-2 right-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                    <span id="soldier-detail-type"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 w-full text-left text-sm mt-2 flex-grow bg-gray-100 p-3 rounded-md border border-gray-200">
+                <p class="font-semibold text-gray-700">生命值: <span id="soldier-detail-hp" class="font-normal text-gray-600">0/0</span></p>
+                <p class="font-semibold text-gray-700">怒氣: <span id="soldier-detail-rage" class="font-normal text-gray-600">0/0</span></p>
+                <p class="font-semibold text-gray-700">移動範圍: <span id="soldier-detail-move-range" class="font-normal text-gray-600">0格</span></p>
+                
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-attack-value">攻擊: <span id="soldier-detail-attack-value" class="font-normal text-blue-700 hover:underline cursor-pointer">0</span></p>
+                
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-attack-range-value">攻擊範圍: <span id="soldier-detail-attack-range-value" class="font-normal text-blue-700 hover:underline cursor-pointer">0</span></p>
+                
+                <p class="font-semibold text-gray-700">糧耗: <span id="soldier-detail-food-cost" class="font-normal text-gray-600">0</span></p>
+                
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-damage-reduction-value">減免傷害: <span id="soldier-detail-damage-reduction-value" class="font-normal text-blue-700 hover:underline cursor-pointer">0/0%</span></p>
+                
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-lifesteal-value">吸血: <span id="soldier-detail-lifesteal-value" class="font-normal text-blue-700 hover:underline cursor-pointer">0/0%</span></p>
+                
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-hp-regen-value">回血: <span id="soldier-detail-hp-regen-value" class="font-normal text-blue-700 hover:underline cursor-pointer">0/0%</span></p>
+                
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-shield">護盾: <span id="soldier-detail-shield" class="font-normal text-gray-600">0</span></p>
+
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-evasion-value">閃避: <span id="soldier-detail-evasion-value" class="font-normal text-blue-700 hover:underline cursor-pointer">0%</span></p>
+
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-block">格擋: <span id="soldier-detail-block" class="font-normal text-gray-600">無</span></p>
+                <p class="font-semibold text-gray-700" id="p-soldier-detail-parry">招架: <span id="soldier-detail-parry" class="font-normal text-gray-600">0%</span></p>
+
+            </div>
+
+            <div class="w-full mt-4 bg-gray-100 p-3 rounded-md border border-gray-200">
+                <p class="font-semibold text-gray-700 mb-2">技能:</p>
+                <div id="soldier-detail-skills" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                    <p id="no-skills-message" class="col-span-full text-center text-gray-500 italic hidden">無技能</p>
+                </div>
+            </div>
+
+            <p class="font-semibold text-gray-700 mt-4">移動速度(主地圖): <span id="soldier-detail-move-speed" class="font-normal text-gray-600">0格/小時</span></p>
+        </div>
+    </div>
+    
+    <div id="attack-details-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="attack-details-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="attack-details-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center">攻擊詳情</h4>
+            <div class="bg-gray-100 p-3 rounded-md border border-gray-200 flex-grow overflow-y-auto">
+                <div id="attack-details-content" class="text-sm text-gray-600 grid grid-cols-1 gap-y-1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="attack-range-details-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="attack-range-details-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="attack-range-details-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center">攻擊範圍詳情</h4>
+            <div class="bg-gray-100 p-3 rounded-md border border-gray-200 flex-grow overflow-y-auto">
+                <div id="attack-range-details-content" class="text-sm text-gray-600 grid grid-cols-1 gap-y-1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="damage-reduction-details-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="damage-reduction-details-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="damage-reduction-details-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center">減免傷害詳情</h4>
+            <div class="bg-gray-100 p-3 rounded-md border border-gray-200 flex-grow overflow-y-auto">
+                <div id="damage-reduction-details-content" class="text-sm text-gray-600 grid grid-cols-1 gap-y-1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="lifesteal-details-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="lifesteal-details-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="lifesteal-details-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center">吸血詳情</h4>
+            <div class="bg-gray-100 p-3 rounded-md border border-gray-200 flex-grow overflow-y-auto">
+                <div id="lifesteal-details-content" class="text-sm text-gray-600 grid grid-cols-1 gap-y-1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="hp-regen-details-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="hp-regen-details-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="hp-regen-details-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center">回血詳情</h4>
+            <div class="bg-gray-100 p-3 rounded-md border border-gray-200 flex-grow overflow-y-auto">
+                <div id="hp-regen-details-content" class="text-sm text-gray-600 grid grid-cols-1 gap-y-1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="evasion-details-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="evasion-details-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="evasion-details-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+            <h4 class="text-xl font-bold text-gray-800 mb-4 text-center">閃避詳情</h4>
+            <div class="bg-gray-100 p-3 rounded-md border border-gray-200 flex-grow overflow-y-auto">
+                <div id="evasion-details-content" class="text-sm text-gray-600 grid grid-cols-1 gap-y-1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="skill-popup-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 detail-modal-overlay">
+        <div id="skill-popup-modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative detail-modal-content">
+            <button id="skill-popup-close-button" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl font-bold detail-close-button">&times;</button>
+
+            <div class="flex flex-col items-center mb-4">
+                <img id="skill-popup-image" src="" alt="技能圖像" class="w-20 h-20 object-contain rounded-full border border-gray-300 mb-2">
+                <p id="skill-popup-type" class="text-sm font-semibold text-gray-700 leading-tight mb-1"></p>
+                <h4 id="skill-popup-name" class="text-xl font-bold text-gray-800 leading-tight"></h4>
+            </div>
+
+            <div class="bg-gray-100 p-3 rounded-md border border-gray-200 flex-grow overflow-y-auto">
+                <p id="skill-popup-description" class="text-sm text-gray-600 whitespace-pre-wrap"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-team-confirm-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative">
+            <h2 class="text-xl font-bold mb-4 text-center text-gray-800">創建隊伍</h2>
+            <p id="create-team-message" class="text-gray-700 text-center mb-6">是否創建預設隊伍『隊伍一』並訓練士兵？</p>
+            <div class="flex justify-around space-x-4">
+                <button id="cancel-create-team-button" class="btn-custom-base btn-small-size bg-red-500 hover:bg-red-600 text-white flex-grow">取消</button>
+                <button id="confirm-create-team-button" class="btn-custom-base btn-small-size bg-green-500 hover:bg-green-600 text-white flex-grow">確認</button>
+            </div>
+        </div>
+    </div>
+    <div id="cancel-recruitment-confirm-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm flex flex-col relative">
+            <h2 class="text-xl font-bold mb-4 text-center text-gray-800">取消招募</h2>
+            <p id="cancel-recruitment-message" class="text-gray-700 text-center mb-6">確定要取消招募並返還資源嗎？</p>
+            <div class="flex justify-around space-x-4">
+                <button id="cancel-cancel-recruitment-button" class="btn-custom-base btn-small-size bg-red-500 hover:bg-red-600 text-white flex-grow">取消</button>
+                <button id="confirm-cancel-recruitment-button" class="btn-custom-base btn-small-size bg-green-500 hover:bg-green-600 text-white flex-grow">確認</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tile-interaction-overlay" class="hidden fixed inset-0 z-40 bg-transparent">
+        <div id="tile-interaction-container" class="absolute tile-interaction-element">
+            <div id="tile-info-top" class="absolute bottom-[120%] left-1/2 -translate-x-1/2 w-max bg-white/90 p-2 rounded-lg shadow-lg border border-gray-300 text-gray-800 text-sm text-center tile-interaction-element whitespace-nowrap">
+            </div>
+            
+            <div id="tile-info-left" class="absolute right-[120%] top-1/2 -translate-y-1/2 w-max bg-white/90 p-2 rounded-lg shadow-lg border border-gray-300 text-gray-800 text-sm tile-interaction-element whitespace-nowrap">
+            </div>
+        
+            <div id="tile-actions-right" class="absolute left-[120%] top-1/2 -translate-y-1/2 flex flex-col space-y-2 tile-interaction-element">
+                <button id="tile-action-enter" class="tile-action-button">進入</button>
+                <button id="tile-action-occupy" class="tile-action-button">攻佔</button>
+                <button id="tile-action-march" class="tile-action-button">行進</button>
+                <button id="tile-action-build" class="tile-action-button">修建</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message-box" class="fixed top-5 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-lg z-50 transition-all duration-300 ease-out opacity-0 pointer-events-none"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYgO0fo470ZtmqxQ3ChA6LpdYJy-MsMIQ",
+            authDomain: "sample-firebase-ai-app-ba318.firebaseapp.com",
+            projectId: "sample-firebase-ai-app-ba318",
+            storageBucket: "sample-firebase-ai-app-ba318.appspot.com",
+            messagingSenderId: "255579078662",
+            appId: "1:255579078662:web:f6eac569771ef97df70387"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        
+        window.db = getFirestore(app);
+        window.auth = getAuth(app);
+    </script>
+
+    <script type="module" src="./js/main.js "></script>
+</body>
+</html>

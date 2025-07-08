@@ -1,0 +1,236 @@
+/* /src/styles/main.css */
+/* [彈窗樣式修復] 統一主要彈窗高度並重建 z-index 層級系統 */
+
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #1a202c;
+}
+
+body {
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    box-sizing: border-box;
+}
+
+#game-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #1a202c;
+    cursor: grab;
+    touch-action: none;
+}
+#game-viewport.dragging {
+    cursor: grabbing;
+}
+#game-viewport.locked {
+    cursor: default;
+}
+
+#game-map-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.scrollbar-hidden::-webkit-scrollbar { display: none; }
+.scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* --- 彈窗通用樣式 --- */
+
+/* 基礎彈窗層 (z-50) */
+.modal-overlay-base {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* 彈窗內容通用樣式 */
+.modal-content-base {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    width: 90%;
+    max-width: 32rem; /* 512px */
+    max-height: 80vh; /* 統一最大高度 */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* 彈窗關閉按鈕 */
+.modal-close-button {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    color: #6B7280;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+.modal-close-button:hover {
+    color: #4B5563;
+}
+
+/* --- 細節彈窗與頂層彈窗 --- */
+
+/* 細節彈窗層 (z-60) */
+.detail-modal-overlay {
+    z-index: 60;
+}
+
+/* 頂層彈窗 (z-70)，用於技能、屬性等 */
+.top-modal-overlay {
+    z-index: 70;
+}
+
+/* 彈出動畫 */
+.detail-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.75);
+    transition: opacity 0.3s ease-in-out;
+}
+.detail-modal-content {
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+.detail-modal-overlay.active .detail-modal-content {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* --- 按鈕樣式 --- */
+.btn-custom-base {
+    border-radius: 0.375rem;
+    font-weight: bold;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: scale(1);
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    cursor: pointer;
+    outline: none;
+    border: none;
+}
+.btn-custom-base:hover { transform: scale(1.05); }
+.btn-custom-base:active { transform: scale(0.95); }
+
+.btn-custom-normal {
+    background-color: #FDD835;
+    filter: grayscale(40%);
+    color: #1a202c;
+}
+.btn-custom-normal:hover {
+    background-color: #FFD54F;
+    filter: grayscale(0%);
+    opacity: 1;
+}
+
+.btn-custom-pressed {
+    background-color: #FFFFFF;
+    filter: grayscale(0%);
+    opacity: 0.1;
+    color: #1a202c;
+}
+
+.btn-main-size { padding: 1.275rem 1.5rem; }
+.btn-small-size { padding: 0.5rem 1rem; }
+
+/* --- 圖鑑特定樣式 --- */
+/* [修復] 將通用樣式寫出來，而不是只留註解 */
+#illustrated-guide-modal-content {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    width: 90%;
+    max-width: 32rem;
+    max-height: 80vh; /* 統一最大高度 */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+#illustrated-guide-background-layer {
+    position: absolute;
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    top: 4rem;
+    background-color: #F3F4F6;
+    border: 1px solid #D1D5DB;
+    border-radius: 0.375rem;
+    z-index: 0;
+}
+
+.illustrated-guide-tab {
+    flex-grow: 1;
+    overflow-y: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    color: #4B5563;
+    position: relative;
+    z-index: 10;
+    padding: 0.5rem;
+}
+.illustrated-guide-tab.hidden {
+    display: none;
+}
+.illustrated-guide-tab::-webkit-scrollbar {
+    display: none;
+}
+
+.catalog-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #4b5563;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    height: 140px;
+}
+
+.catalog-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+}
+
+.catalog-card-image-wrapper {
+    width: 100%;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.catalog-card-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.catalog-card .fa-star {
+    color: #FBBF24;
+}
