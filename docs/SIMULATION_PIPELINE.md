@@ -11,9 +11,3 @@ Input
  -> Snapshot
  -> Render Adapter
  -> Replay / Validation
-
-Long-term goals:
-- deterministic simulation
-- replay support
-- rollback support
-- distributed simulation

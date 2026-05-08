@@ -11,9 +11,9 @@ Universe
  -> Local Region
 
 Core concerns:
+
 - double precision
 - integer hybrid coordinates
 - origin shifting
 - chunk streaming
 - octree and quadtree partitioning
-- large-scale simulation stability

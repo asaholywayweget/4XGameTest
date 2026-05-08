@@ -1,11 +1,13 @@
 # Module Boundaries
 
 Core layers:
+
 - Core
 - Math
 - Space
 - Simulation
 - Physics
+- World
 - Database
 - Rendering
 - Networking
@@ -13,6 +15,7 @@ Core layers:
 - Tooling
 
 Rules:
+
 - low coupling
 - replaceable modules
 - explicit ownership
