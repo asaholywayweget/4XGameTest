@@ -9,7 +9,7 @@ public sealed class DeterministicReplayValidator
         if (expected.Count != actual.Count)
             errors.Add($"Snapshot count mismatch. Expected {expected.Count}, actual {actual.Count}.");
 
-        var count = System.Math.Min(expected.Count, actual.Count);
+        var count = Math.Min(expected.Count, actual.Count);
         for (var i = 0; i < count; i++)
         {
             var a = expected[i];
