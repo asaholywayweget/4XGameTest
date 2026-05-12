@@ -13,9 +13,14 @@ public sealed class DeferredCommandBuffer
 
     public IReadOnlyList<StructuralCommand> Commands => _commands;
 
+    public void Enqueue(StructuralCommand command)
+    {
+        _commands.Add(command);
+    }
+
     public void CreateEntity(EngineTick tick)
     {
-        _commands.Add(new StructuralCommand(
+        Enqueue(new StructuralCommand(
             tick,
             StructuralCommandType.CreateEntity,
             EntityId.Invalid,
@@ -28,7 +33,7 @@ public sealed class DeferredCommandBuffer
         if (!entityId.IsValid)
             throw new ArgumentException("EntityId must be valid.", nameof(entityId));
 
-        _commands.Add(new StructuralCommand(
+        Enqueue(new StructuralCommand(
             tick,
             StructuralCommandType.DestroyEntity,
             entityId,
@@ -44,7 +49,7 @@ public sealed class DeferredCommandBuffer
         if (componentType.IsEmpty)
             throw new ArgumentException("Component type cannot be empty.", nameof(componentType));
 
-        _commands.Add(new StructuralCommand(
+        Enqueue(new StructuralCommand(
             tick,
             StructuralCommandType.AddComponent,
             entityId,
