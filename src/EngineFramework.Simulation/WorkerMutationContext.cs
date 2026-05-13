@@ -7,6 +7,9 @@ public sealed class WorkerMutationContext
 {
     public WorkerMutationContext(WorkerId workerId, ThreadLocalCommandBuffer commandBuffer)
     {
+        if (workerId != commandBuffer.WorkerId)
+            throw new InvalidOperationException("WorkerMutationContext worker id must match the command buffer worker id.");
+
         WorkerId = workerId;
         CommandBuffer = commandBuffer;
     }
