@@ -130,3 +130,63 @@ Thumbs.db
 project.lock.json
 project.fragment.lock.json
 artifacts/
+
+# =============================================================
+# SIMULATION INFRASTRUCTURE POLICY
+# (append-only �� do not remove above; see repository_constitution.md)
+# =============================================================
+
+# GPU / Shader Pipeline
+*.spv
+*.ptx
+*.cubin
+*.dxil
+*.metallib
+/shader_cache/
+/pipeline_cache/
+
+# Simulation Runtime Cache
+/simulation_cache/
+/runtime_cache/
+/field_cache/
+/voxel_cache/
+/streaming_cache/
+/clipmap_cache/
+/residency_cache/
+
+# Generated Runtime Assets (must be rebuildable from source truth)
+/generated_runtime/
+/compiled_proxy/
+/runtime_bake/
+/reduced_models/
+/proxy_field/
+
+# Distributed Runtime State
+/replays/
+/snapshots/
+/rollback_cache/
+/sync_logs/
+/authority_trace/
+/runtime_trace/
+
+# Large World Streaming
+/world_stream/
+/terrain_tiles/
+/virtual_geometry/
+/chunk_cache/
+
+# Temporary Solver Output
+/temp_solver/
+/fem_temp/
+/md_temp/
+/thermal_temp/
+
+# Native / Multi-language Toolchain
+*.dll
+*.so
+*.dylib
+*.lib
+*.exp
+
+# Rust
+/target/
