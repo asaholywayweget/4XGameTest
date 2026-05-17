@@ -115,6 +115,8 @@ healthchecksdb
 # OS files
 .DS_Store
 Thumbs.db
+
+# Environment
 .env
 .env.local
 
@@ -122,18 +124,9 @@ Thumbs.db
 *.nupkg
 *.snupkg
 .nuget/
+.nuget/packages/
 
 # dotnet
 project.lock.json
 project.fragment.lock.json
 artifacts/
-
-# Package cache
-.nuget/packages/
-
-# Rider
-.idea/
-*.sln.iml
-
-# Mac
-.DS_Store
