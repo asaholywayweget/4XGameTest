@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/asaholywayweget/4XGameTest/tools/agent_loop/schema.json",
+  "title": "Engine Framework Agent Loop Packet",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "mode",
+    "repository",
+    "text_packet",
+    "role_gap_review",
+    "code_packet",
+    "next_loop_seed"
+  ],
+  "properties": {
+    "loop_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "green_docs_only",
+        "yellow_branch_code",
+        "blocked_requires_human_review"
+      ]
+    },
+    "repository": {
+      "type": "string",
+      "const": "asaholywayweget/4XGameTest"
+    },
+    "text_packet": {
+      "type": "object",
+      "required": [
+        "summary",
+        "agent_outputs",
+        "shared_contract_changes",
+        "risks"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "agent_outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["agent", "output", "conflicts"],
+            "properties": {
+              "agent": { "type": "string" },
+              "output": { "type": "string" },
+              "conflicts": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "shared_contract_changes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "risks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "role_gap_review": {
+      "type": "object",
+      "required": [
+        "missing_responsibilities",
+        "new_agent_candidates",
+        "decision"
+      ],
+      "properties": {
+        "missing_responsibilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "new_agent_candidates": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "no_new_agent_continue_to_code_packet",
+            "refactor_into_shared_module",
+            "add_candidate_agent_and_rerun_review",
+            "blocked_requires_human_review"
+          ]
+        }
+      }
+    },
+    "code_packet": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "changed_files",
+        "run_command",
+        "expected_result",
+        "validation_status"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "changed_files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "run_command": { "type": "string" },
+        "expected_result": { "type": "string" },
+        "validation_status": {
+          "type": "string",
+          "enum": ["not_run", "passed", "failed", "not_applicable"]
+        }
+      }
+    },
+    "next_loop_seed": {
+      "type": "object",
+      "required": ["next_safe_target", "blockers", "human_review_needed"],
+      "properties": {
+        "next_safe_target": { "type": "string" },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "human_review_needed": { "type": "boolean" }
+      }
+    }
+  }
+}
